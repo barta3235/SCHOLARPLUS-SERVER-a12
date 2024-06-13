@@ -1,8 +1,9 @@
-const express= require('express');
-const app= express();
-const cors= require('cors');
+const express = require('express');
+const app = express();
+const jwt= require('jsonwebtoken');
+const cors = require('cors');
 require('dotenv').config();
-const PORT= process.env.port || 5000;
+const PORT = process.env.port || 5000;
 
 
 //middleware
@@ -29,11 +30,30 @@ async function run() {
     await client.connect();
 
 
+    const userCollection = client.db('m12a12_scholarplus').collection('users');
+
+
 
     //users
-    const userCollection= client.db('m12a12_scholarplus').collection('users')
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ insertedId: null })
+      }
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    })
 
 
+
+    //JWT related API
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token=jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'1h'})
+      res.send({token});
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
@@ -47,10 +67,10 @@ run().catch(console.dir);
 
 
 
-app.get('/',async(req,res)=>{
-   res.send('Scholar plus is live')
+app.get('/', async (req, res) => {
+  res.send('Scholar plus is live')
 })
 
-app.listen(PORT,()=>{
-    console.log('Scholar plus is live')
+app.listen(PORT, () => {
+  console.log('Scholar plus is live')
 })
