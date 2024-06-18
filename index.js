@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const jwt= require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
 require('dotenv').config();
 const PORT = process.env.port || 5000;
@@ -31,6 +31,34 @@ async function run() {
 
 
     const userCollection = client.db('m12a12_scholarplus').collection('users');
+    const allScholarshipCollection=client.db('m12a12_scholarplus').collection('allScholarship');
+
+    //middlewares
+    const verifyToken = (req, res, next) => {
+      console.log('Inside verify token middleware', req.headers.authorization);
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'unauthorized access' });
+      }
+      const token = req.headers.authorization.split(' ')[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: 'unauthorized access' });
+        }
+        req.decoded = decoded
+        next();
+      })
+    }
+
+    const verifyModerator = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const isModerator = user?.role === 'moderator';
+      if (!isModerator) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      next();
+    }
 
 
 
@@ -46,13 +74,53 @@ async function run() {
       res.send(result);
     })
 
+    //top 6 scholarships
+    app.get('/top6Scholarship',async(req,res)=>{
+      const result=await allScholarshipCollection.find().sort({applicationfee:1,postdate:-1}).limit(6).toArray();
+      res.send(result);
+    })
+
+    //all scholarships
+    app.get('/top6Scholarship',async(req,res)=>{
+      const result=await allScholarshipCollection.find().toArray();
+      res.send(result);
+    })
+
+
+
+
+    //scholarships
+    //add scholarships
+    app.post('/addScholarshipModerator',verifyToken,verifyModerator, async(req,res)=>{
+        const newScholarship=req.body;
+        const result= await allScholarshipCollection.insertOne(newScholarship);
+        res.send(result);
+    })
+
+
+
+    //Moderator Section.
+    app.get('/users/moderator/:email',verifyToken, async (req, res) => {
+      const email = req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      let moderator = false;
+      if (user) {
+        moderator = user?.role === 'moderator'
+      }
+      res.send({moderator});
+    })
+
 
 
     //JWT related API
     app.post('/jwt', async (req, res) => {
       const user = req.body;
-      const token=jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'1h'})
-      res.send({token});
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+      res.send({ token });
     })
 
     // Send a ping to confirm a successful connection
