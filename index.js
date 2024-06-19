@@ -12,7 +12,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.n2g3mj5.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -31,7 +31,7 @@ async function run() {
 
 
     const userCollection = client.db('m12a12_scholarplus').collection('users');
-    const allScholarshipCollection=client.db('m12a12_scholarplus').collection('allScholarship');
+    const allScholarshipCollection = client.db('m12a12_scholarplus').collection('allScholarship');
 
     //middlewares
     const verifyToken = (req, res, next) => {
@@ -75,32 +75,50 @@ async function run() {
     })
 
     //top 6 scholarships
-    app.get('/top6Scholarship',async(req,res)=>{
-      const result=await allScholarshipCollection.find().sort({applicationfee:1,postdate:-1}).limit(6).toArray();
+    app.get('/top6Scholarship', async (req, res) => {
+      const result = await allScholarshipCollection.find().sort({ applicationfee: 1, postdate: -1 }).limit(6).toArray();
       res.send(result);
     })
 
     //all scholarships
-    app.get('/top6Scholarship',async(req,res)=>{
-      const result=await allScholarshipCollection.find().toArray();
+    app.get('/allScholarship', async (req, res) => {
+      const filterBySearch = req.query.search;
+      const query = {
+        $or: [
+          { scholarshipname: { $regex: filterBySearch, $options: 'i' } },
+          { universityname: { $regex: filterBySearch, $options: 'i' } },
+          { degree: { $regex: filterBySearch, $options: 'i' } }
+        ]
+      }
+      const result = await allScholarshipCollection.find(query).toArray();
       res.send(result);
     })
+
+    //scholarship by Id
+    app.get('/allScholarship/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await allScholarshipCollection.findOne(query);
+      res.send(result);
+
+    })
+
 
 
 
 
     //scholarships
     //add scholarships
-    app.post('/addScholarshipModerator',verifyToken,verifyModerator, async(req,res)=>{
-        const newScholarship=req.body;
-        const result= await allScholarshipCollection.insertOne(newScholarship);
-        res.send(result);
+    app.post('/addScholarshipModerator', verifyToken, verifyModerator, async (req, res) => {
+      const newScholarship = req.body;
+      const result = await allScholarshipCollection.insertOne(newScholarship);
+      res.send(result);
     })
 
 
 
     //Moderator Section.
-    app.get('/users/moderator/:email',verifyToken, async (req, res) => {
+    app.get('/users/moderator/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
       if (email !== req.decoded.email) {
         return res.status(403).send({ message: 'forbidden access' });
@@ -111,7 +129,7 @@ async function run() {
       if (user) {
         moderator = user?.role === 'moderator'
       }
-      res.send({moderator});
+      res.send({ moderator });
     })
 
 
