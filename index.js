@@ -74,15 +74,23 @@ async function run() {
       res.send(result);
     })
 
+    //all scholarship count
+    app.get('/scholarship-count',async(req,res)=>{
+      const count=await allScholarshipCollection.countDocuments();
+      res.send({count})
+  })
+
     //top 6 scholarships
     app.get('/top6Scholarship', async (req, res) => {
       const result = await allScholarshipCollection.find().sort({ applicationfee: 1, postdate: -1 }).limit(6).toArray();
       res.send(result);
     })
 
-    //all scholarships
+    //all scholarships with search and pagination
     app.get('/allScholarship', async (req, res) => {
       const filterBySearch = req.query.search;
+      const size=parseInt(req.query.size);
+      const page=parseInt(req.query.page)-1;
       const query = {
         $or: [
           { scholarshipname: { $regex: filterBySearch, $options: 'i' } },
@@ -90,7 +98,7 @@ async function run() {
           { degree: { $regex: filterBySearch, $options: 'i' } }
         ]
       }
-      const result = await allScholarshipCollection.find(query).toArray();
+      const result = await allScholarshipCollection.find(query).skip(size*page).limit(size).toArray();
       res.send(result);
     })
 
