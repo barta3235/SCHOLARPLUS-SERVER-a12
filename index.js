@@ -3,6 +3,7 @@ const app = express();
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const PORT = process.env.port || 5000;
 
 
@@ -32,6 +33,7 @@ async function run() {
 
     const userCollection = client.db('m12a12_scholarplus').collection('users');
     const allScholarshipCollection = client.db('m12a12_scholarplus').collection('allScholarship');
+    const appliedScholarshipCollection = client.db('m12a12_scholarplus').collection('appliedScholarship');
 
     //middlewares
     const verifyToken = (req, res, next) => {
@@ -75,10 +77,10 @@ async function run() {
     })
 
     //all scholarship count
-    app.get('/scholarship-count',async(req,res)=>{
-      const count=await allScholarshipCollection.countDocuments();
-      res.send({count})
-  })
+    app.get('/scholarship-count', async (req, res) => {
+      const count = await allScholarshipCollection.countDocuments();
+      res.send({ count })
+    })
 
     //top 6 scholarships
     app.get('/top6Scholarship', async (req, res) => {
@@ -89,8 +91,8 @@ async function run() {
     //all scholarships with search and pagination
     app.get('/allScholarship', async (req, res) => {
       const filterBySearch = req.query.search;
-      const size=parseInt(req.query.size);
-      const page=parseInt(req.query.page)-1;
+      const size = parseInt(req.query.size);
+      const page = parseInt(req.query.page) - 1;
       const query = {
         $or: [
           { scholarshipname: { $regex: filterBySearch, $options: 'i' } },
@@ -98,13 +100,22 @@ async function run() {
           { degree: { $regex: filterBySearch, $options: 'i' } }
         ]
       }
-      const result = await allScholarshipCollection.find(query).skip(size*page).limit(size).toArray();
+      const result = await allScholarshipCollection.find(query).skip(size * page).limit(size).toArray();
       res.send(result);
     })
 
     //scholarship by Id
     app.get('/allScholarship/:id', async (req, res) => {
       const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await allScholarshipCollection.findOne(query);
+      res.send(result);
+
+    })
+
+    app.get('/scholarship/payment/:id', verifyToken, async (req, res) => {
+      const id = req.params.id;
+      console.log(id)
       const query = { _id: new ObjectId(id) };
       const result = await allScholarshipCollection.findOne(query);
       res.send(result);
@@ -142,12 +153,89 @@ async function run() {
 
 
 
+
+
+
+
     //JWT related API
     app.post('/jwt', async (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
       res.send({ token });
     })
+
+
+    //payment intent
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      console.log(amount);
+
+      //create payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
+
+
+    //appliedScholarshipByUser
+    app.post('/appliedScholarshipByUser', verifyToken, async (req, res) => {
+      const data = req.body;
+      const result = await appliedScholarshipCollection.insertOne(data)
+      res.send(result);
+    })
+
+    app.get('/appliedScholarshipByUser/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email }
+      const result = await appliedScholarshipCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
+
+
+    //appliedScholarshipByUser/update
+    app.get('/appliedScholarshipByUser/update/:id', verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await appliedScholarshipCollection.findOne(query);
+      res.send(result);
+    })
+
+    app.put('/appliedScholarshipByUser/update/:id', verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const newData = req.body;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const updatedData = {
+        $set: {
+          applicantphone : newData.applicantphone,
+          applicantgender : newData.applicantgender,
+          applicantimage : newData.applicantimage,
+          applicantdegree : newData.applicantdegree,
+          country : newData.country,
+          district : newData.district,
+          village : newData.village,
+          ssc : newData.ssc,
+          hsc : newData.hsc,
+          studygap : newData.studygap,
+        }
+      }
+      const result= await appliedScholarshipCollection.updateOne(filter,updatedData,options);
+      console.log(result);
+      res.send(result);
+    })
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
