@@ -34,6 +34,7 @@ async function run() {
     const userCollection = client.db('m12a12_scholarplus').collection('users');
     const allScholarshipCollection = client.db('m12a12_scholarplus').collection('allScholarship');
     const appliedScholarshipCollection = client.db('m12a12_scholarplus').collection('appliedScholarship');
+    const userReviewCollection = client.db('m12a12_scholarplus').collection('userReview');
 
     //middlewares
     const verifyToken = (req, res, next) => {
@@ -216,22 +217,83 @@ async function run() {
       const options = { upsert: true }
       const updatedData = {
         $set: {
-          applicantphone : newData.applicantphone,
-          applicantgender : newData.applicantgender,
-          applicantimage : newData.applicantimage,
-          applicantdegree : newData.applicantdegree,
-          country : newData.country,
-          district : newData.district,
-          village : newData.village,
-          ssc : newData.ssc,
-          hsc : newData.hsc,
-          studygap : newData.studygap,
+          applicantphone: newData.applicantphone,
+          applicantgender: newData.applicantgender,
+          applicantimage: newData.applicantimage,
+          applicantdegree: newData.applicantdegree,
+          country: newData.country,
+          district: newData.district,
+          village: newData.village,
+          ssc: newData.ssc,
+          hsc: newData.hsc,
+          studygap: newData.studygap,
         }
       }
-      const result= await appliedScholarshipCollection.updateOne(filter,updatedData,options);
+      const result = await appliedScholarshipCollection.updateOne(filter, updatedData, options);
       console.log(result);
       res.send(result);
     })
+
+    //applied scholarship delete
+    app.delete('/appliedScholarshipByUser/delete/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await appliedScholarshipCollection.deleteOne(query);
+      res.send(result);
+    })
+
+
+    // user review
+    app.post('/userReview', verifyToken, async (req, res) => {
+      const newReview = req.body;
+      const result = await userReviewCollection.insertOne(newReview);
+      res.send(result);
+    })
+
+    app.get('/userReview/:email', verifyToken, async (req, res) => {
+      const userEmail = req.params.email;
+      const query = { useremail: userEmail }
+      const result = await userReviewCollection.find(query).toArray()
+      res.send(result);
+    })
+
+    app.get('/userReviewById/:id', verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await userReviewCollection.findOne(query)
+      res.send(result);
+    })
+
+    app.put('/userReviewUpdate/:id', verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updatedReview = req.body;
+      const options = { upsert: true }
+      const updatedData = {
+        $set: {
+          rating: updatedReview.rating,
+          date: updatedReview.date,
+          comment: updatedReview.comment,
+          scholarshipid: updatedReview.scholarshipid,
+          scholarshipname: updatedReview.scholarshipname,
+          universityname: updatedReview.universityname,
+          username: updatedReview.username,
+          useremail: updatedReview.useremail,
+        }
+      }
+      const result = await userReviewCollection.updateOne(filter, updatedData, options);
+      res.send(result);
+    })
+
+
+
+    app.delete('/userReview/delete/:id', verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await userReviewCollection.deleteOne(query)
+      res.send(result);
+    })
+
 
 
 
