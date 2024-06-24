@@ -174,7 +174,7 @@ async function run() {
       res.send(result);
     })
 
-    //moderator || get each schoalrship data by id
+    //moderator || get each scholarship data by id
     app.get('/user/moderator/allScholarship/:id', verifyToken, verifyModerator, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -182,34 +182,50 @@ async function run() {
       res.send(result);
     })
 
-    app.put('/user/moderator/allScholarship/:id',verifyToken,verifyModerator,async(req,res)=>{
-       const id = req.params.id;
-       const data=req.body;
-       const filter= {_id: new ObjectId(id)}
-       const options={upsert:true};
-       const updatedScholarship={
-        $set:{
-          scholarshipname:data.scholarshipname,
-          subjectcategory:data.subjectcategory,
-          scholarshipCategory:data.scholarshipCategory,
-          degree:data.degree,
-          tuitionfee:data.tuitionfee,
-          applicationfee:data.applicationfee,
-          servicecharge:data.servicecharge,
-          description:data.description,
-          universityname:data.universityname,
-          universityimage:data.universityimage,
-          country:data.country,
-          city:data.city,
-          worldranking:data.worldranking,
-          postdate:data.postdate,
-          applicationdeadline:data.applicationdeadline,
-          email:data.email
+    //moderator || update all scholar ship data.
+    app.put('/user/moderator/allScholarship/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true };
+      const updatedScholarship = {
+        $set: {
+          scholarshipname: data.scholarshipname,
+          subjectcategory: data.subjectcategory,
+          scholarshipCategory: data.scholarshipCategory,
+          degree: data.degree,
+          tuitionfee: data.tuitionfee,
+          applicationfee: data.applicationfee,
+          servicecharge: data.servicecharge,
+          description: data.description,
+          universityname: data.universityname,
+          universityimage: data.universityimage,
+          country: data.country,
+          city: data.city,
+          worldranking: data.worldranking,
+          postdate: data.postdate,
+          applicationdeadline: data.applicationdeadline,
+          email: data.email
         }
-       }
+      }
 
-       const result =await allScholarshipCollection.updateOne(filter,updatedScholarship,options);
-       res.send(result);
+      const result = await allScholarshipCollection.updateOne(filter, updatedScholarship, options);
+      res.send(result);
+    })
+
+    //moderator || get all reviews 
+    app.get('/user/moderator/allReview', verifyToken, verifyModerator, async (req, res) => {
+      const result = await userReviewCollection.find().toArray();
+      res.send(result);
+    })
+
+    //moderator || delete a review
+    app.delete('/user/moderator/allReviewDelete/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await userReviewCollection.deleteOne(query);
+      res.send(result);
+
     })
 
 
