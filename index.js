@@ -77,6 +77,14 @@ async function run() {
       res.send(result);
     })
 
+    //get user information by email
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await userCollection.findOne(query)
+      res.send(result);
+    })
+
     //all scholarship count
     app.get('/scholarship-count', async (req, res) => {
       const count = await allScholarshipCollection.countDocuments();
@@ -151,6 +159,61 @@ async function run() {
       }
       res.send({ moderator });
     })
+
+    //moderator ||  get all scholarships
+    app.get('/user/moderator/allScholarship', verifyToken, verifyModerator, async (req, res) => {
+      const result = await allScholarshipCollection.find().toArray();
+      res.send(result);
+    })
+
+    //moderator || Delete a scholarship from all scholarship
+    app.delete('/user/moderator/allScholarship/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await allScholarshipCollection.deleteOne(query);
+      res.send(result);
+    })
+
+    //moderator || get each schoalrship data by id
+    app.get('/user/moderator/allScholarship/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await allScholarshipCollection.findOne(query);
+      res.send(result);
+    })
+
+    app.put('/user/moderator/allScholarship/:id',verifyToken,verifyModerator,async(req,res)=>{
+       const id = req.params.id;
+       const data=req.body;
+       const filter= {_id: new ObjectId(id)}
+       const options={upsert:true};
+       const updatedScholarship={
+        $set:{
+          scholarshipname:data.scholarshipname,
+          subjectcategory:data.subjectcategory,
+          scholarshipCategory:data.scholarshipCategory,
+          degree:data.degree,
+          tuitionfee:data.tuitionfee,
+          applicationfee:data.applicationfee,
+          servicecharge:data.servicecharge,
+          description:data.description,
+          universityname:data.universityname,
+          universityimage:data.universityimage,
+          country:data.country,
+          city:data.city,
+          worldranking:data.worldranking,
+          postdate:data.postdate,
+          applicationdeadline:data.applicationdeadline,
+          email:data.email
+        }
+       }
+
+       const result =await allScholarshipCollection.updateOne(filter,updatedScholarship,options);
+       res.send(result);
+    })
+
+
+
 
 
 
