@@ -230,6 +230,76 @@ async function run() {
 
 
 
+    //moderator || get all applied scholarship
+    app.get('/user/moderator/allAppliedScholarships', verifyToken, verifyModerator, async (req, res) => {
+      const result = await appliedScholarshipCollection.find().toArray();
+      res.send(result);
+    })
+
+    //moderator || get one applied scholarship at a time
+    app.get('/user/moderator/eachAppliedScholarships/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await appliedScholarshipCollection.findOne(query)
+      res.send(result);
+    })
+
+    //moderator || delete one applied scholarship at a time
+    app.delete('/user/moderator/eachAppliedScholarships/delete/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await appliedScholarshipCollection.deleteOne(query)
+      res.send(result);
+    })
+
+
+    app.put('/user/moderator/updateStatusAfterDelete/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id
+      const newStatus = req.body
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const updatedStatus = {
+        $set: {
+          status: newStatus.status
+        }
+      }
+      const result = await appliedScholarshipCollection.updateOne(filter, updatedStatus, options)
+      res.send(result);
+
+    })
+
+    //moderator || update feed back in applied scholarship
+    app.put('/user/moderator/addFeedBack/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const feedback = req.body;
+      const newFeedBack = {
+        $set: {
+          feedback: feedback.moderatorFeedback
+        }
+      }
+      console.log(id);
+      console.log(feedback);
+      const result= await appliedScholarshipCollection.updateOne(filter,newFeedBack,options)
+      res.send(result);
+    })
+
+    //moderator || update status in applied scholarship
+    app.put('/user/moderator/updateStatus/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const newStatus = req.body;
+      const updatedNewStatus = {
+        $set: {
+          status: newStatus.statusChange
+        }
+      }
+      const result= await appliedScholarshipCollection.updateOne(filter,updatedNewStatus,options)
+      res.send(result);
+    })
+
 
 
 
