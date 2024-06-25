@@ -119,7 +119,6 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await allScholarshipCollection.findOne(query);
       res.send(result);
-
     })
 
     app.get('/scholarship/payment/:id', verifyToken, async (req, res) => {
@@ -128,7 +127,6 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await allScholarshipCollection.findOne(query);
       res.send(result);
-
     })
 
 
@@ -208,7 +206,6 @@ async function run() {
           email: data.email
         }
       }
-
       const result = await allScholarshipCollection.updateOne(filter, updatedScholarship, options);
       res.send(result);
     })
@@ -265,7 +262,6 @@ async function run() {
       }
       const result = await appliedScholarshipCollection.updateOne(filter, updatedStatus, options)
       res.send(result);
-
     })
 
     //moderator || update feed back in applied scholarship
@@ -281,7 +277,7 @@ async function run() {
       }
       console.log(id);
       console.log(feedback);
-      const result= await appliedScholarshipCollection.updateOne(filter,newFeedBack,options)
+      const result = await appliedScholarshipCollection.updateOne(filter, newFeedBack, options)
       res.send(result);
     })
 
@@ -296,7 +292,14 @@ async function run() {
           status: newStatus.statusChange
         }
       }
-      const result= await appliedScholarshipCollection.updateOne(filter,updatedNewStatus,options)
+      const result = await appliedScholarshipCollection.updateOne(filter, updatedNewStatus, options)
+      res.send(result);
+    })
+
+
+    //top-4 reviews
+    app.get('/reviewsTop4', async (req, res) => {
+      const result = await userReviewCollection.find().sort({ rating: 1 }).limit(4).toArray();
       res.send(result);
     })
 
