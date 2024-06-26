@@ -35,6 +35,7 @@ async function run() {
     const allScholarshipCollection = client.db('m12a12_scholarplus').collection('allScholarship');
     const appliedScholarshipCollection = client.db('m12a12_scholarplus').collection('appliedScholarship');
     const userReviewCollection = client.db('m12a12_scholarplus').collection('userReview');
+    const userGetInTouchCollection = client.db('m12a12_scholarplus').collection('getInTouch');
 
     //middlewares
     const verifyToken = (req, res, next) => {
@@ -300,6 +301,22 @@ async function run() {
     //top-4 reviews
     app.get('/reviewsTop4', async (req, res) => {
       const result = await userReviewCollection.find().sort({ rating: 1 }).limit(4).toArray();
+      res.send(result);
+    })
+
+
+    // home page get in touch section post 
+    app.post('/getInTouch',async(req,res)=>{
+      const data=req.body;
+      const result= await userGetInTouchCollection.insertOne(data)
+      res.send(result);
+    })
+
+    //single reviews for carousel slider for scholarships in scholarship details
+    app.get('/specificReviews/:id',async(req,res)=>{
+      const id=req.params.id;
+      const query={scholarshipid:id}
+      const result= await userReviewCollection.find(query).toArray();
       res.send(result);
     })
 
