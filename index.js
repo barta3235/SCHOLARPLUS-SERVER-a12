@@ -308,6 +308,19 @@ async function run() {
       res.send(result);
     })
 
+    //moderator see get in touch messages
+    app.get('/getInTouch', async (req, res) => {
+      const result = await userGetInTouchCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.delete('/getInTouch/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await userGetInTouchCollection.deleteOne(query);
+      res.send(result);
+    })
+
     //moderator ends Admin starts
 
 
@@ -513,6 +526,8 @@ async function run() {
       const result = await userCollection.deleteOne(query);
       res.send(result);
     })
+
+
 
 
 
