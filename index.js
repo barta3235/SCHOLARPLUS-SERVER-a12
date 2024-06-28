@@ -479,13 +479,41 @@ async function run() {
     })
 
 
-    //admin || delete one applied scholarship at a time
-    // app.delete('/user/moderator/eachAppliedScholarships/delete/:id', verifyToken, verifyModerator, async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) }
-    //   const result = await appliedScholarshipCollection.deleteOne(query)
-    //   res.send(result);
-    // })
+
+    // all user by admin
+
+
+    // admin || get all users of all role
+    app.get('/allUsersByAdmin', verifyToken, verifyAdmin, async (req, res) => {
+      const result = await userCollection.find().toArray()
+      res.send(result)
+    })
+
+    //admin // change user role API
+    app.put('/userRoleChangeByAdmin/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true };
+      const newRole = req.body;
+      console.log(filter, newRole);
+      const updatedNewRole = {
+        $set: {
+          role: newRole.roleChange
+        }
+      }
+
+      const result = await userCollection.updateOne(filter, updatedNewRole, options);
+      res.send(result);
+    })
+
+    // admin || delete user by admin
+    app.delete('/deleteUserByAdmin/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await userCollection.deleteOne(query);
+      res.send(result);
+    })
+
 
 
 
