@@ -64,6 +64,17 @@ async function run() {
       next();
     }
 
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const isAdmin = user?.role === 'admin'
+      if (!isAdmin) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+      next();
+    }
+
 
 
     //users
@@ -297,6 +308,193 @@ async function run() {
       res.send(result);
     })
 
+    //moderator ends Admin starts
+
+
+
+
+
+
+
+    //ADMIN STARTS******
+
+
+    //is admin (hook)
+    app.get('/user/admin/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      let admin = false;
+      if (user) {
+        admin = user?.role === 'admin';
+      }
+      res.send({ admin });
+    })
+
+
+    // add scholarship by admin 
+    app.post('/addScholarshipAdmin', verifyToken, verifyAdmin, async (req, res) => {
+      const newScholarship = req.body;
+      const result = await allScholarshipCollection.insertOne(newScholarship);
+      res.send(result);
+    })
+
+    //manage scholarship by admin
+    app.get('/allScholarshipAdmin', verifyToken, verifyAdmin, async (req, res) => {
+      const result = await allScholarshipCollection.find().toArray();
+      res.send(result);
+    })
+
+    // delete scholarship by admin
+    app.delete('/allScholarshipDeleteByAdmin/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await allScholarshipCollection.deleteOne(query);
+      res.send(result);
+    })
+
+    // get each scholarship by id by admin
+    app.get('/allScholarshipAdmin/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await allScholarshipCollection.findOne(query);
+      res.send(result);
+    })
+
+    //update each scholarship by admin
+    app.put('/allScholarshipUpdateByAdmin/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true };
+      const updatedScholarship = {
+        $set: {
+          scholarshipname: data.scholarshipname,
+          subjectcategory: data.subjectcategory,
+          scholarshipCategory: data.scholarshipCategory,
+          degree: data.degree,
+          tuitionfee: data.tuitionfee,
+          applicationfee: data.applicationfee,
+          servicecharge: data.servicecharge,
+          description: data.description,
+          universityname: data.universityname,
+          universityimage: data.universityimage,
+          country: data.country,
+          city: data.city,
+          worldranking: data.worldranking,
+          postdate: data.postdate,
+          applicationdeadline: data.applicationdeadline,
+          email: data.email
+        }
+      }
+      const result = await allScholarshipCollection.updateOne(filter, updatedScholarship, options);
+      res.send(result);
+    })
+
+
+    //applied scholarship admin part
+
+
+
+    //admin || get all applied scholarship
+    app.get('/allAppliedScholarshipsAdmin', verifyToken, verifyAdmin, async (req, res) => {
+      const result = await appliedScholarshipCollection.find().toArray();
+      res.send(result);
+    })
+
+    //admin || get one applied scholarship at a time
+    app.get('/eachAppliedScholarshipsByAdmin/:id', verifyToken, verifyModerator, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await appliedScholarshipCollection.findOne(query)
+      res.send(result);
+    })
+
+
+    // admin || update status of application by clicking delete or cancel
+    app.put('/updateStatusAfterDeleteByAdmin/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id
+      const newStatus = req.body
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const updatedStatus = {
+        $set: {
+          status: newStatus.status
+        }
+      }
+      const result = await appliedScholarshipCollection.updateOne(filter, updatedStatus, options)
+      res.send(result);
+    })
+
+    //admin || update feed back in applied scholarship
+    app.put('/addFeedBackByAdmin/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const feedback = req.body;
+      const newFeedBack = {
+        $set: {
+          feedback: feedback.moderatorFeedback
+        }
+      }
+      console.log(id);
+      console.log(feedback);
+      const result = await appliedScholarshipCollection.updateOne(filter, newFeedBack, options)
+      res.send(result);
+    })
+
+    //admin || update status in applied scholarship
+    app.put('/updateStatusByAdmin/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const newStatus = req.body;
+      const updatedNewStatus = {
+        $set: {
+          status: newStatus.statusChange
+        }
+      }
+      const result = await appliedScholarshipCollection.updateOne(filter, updatedNewStatus, options)
+      res.send(result);
+    })
+
+
+    // allreviews admin part
+
+    //admin || get all reviews 
+    app.get('/allReviewsByAdmin', verifyToken, verifyAdmin, async (req, res) => {
+      const result = await userReviewCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.delete('reviewDeleteByAdmin/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await userReviewCollection.deleteOne(query);
+      res.send(result);
+
+    })
+
+
+    //admin || delete one applied scholarship at a time
+    // app.delete('/user/moderator/eachAppliedScholarships/delete/:id', verifyToken, verifyModerator, async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: new ObjectId(id) }
+    //   const result = await appliedScholarshipCollection.deleteOne(query)
+    //   res.send(result);
+    // })
+
+
+
+
+
+
+
+    //*************ADMIN ENDS */
+
 
     //top-4 reviews
     app.get('/reviewsTop4', async (req, res) => {
@@ -306,17 +504,17 @@ async function run() {
 
 
     // home page get in touch section post 
-    app.post('/getInTouch',async(req,res)=>{
-      const data=req.body;
-      const result= await userGetInTouchCollection.insertOne(data)
+    app.post('/getInTouch', async (req, res) => {
+      const data = req.body;
+      const result = await userGetInTouchCollection.insertOne(data)
       res.send(result);
     })
 
     //single reviews for carousel slider for scholarships in scholarship details
-    app.get('/specificReviews/:id',async(req,res)=>{
-      const id=req.params.id;
-      const query={scholarshipid:id}
-      const result= await userReviewCollection.find(query).toArray();
+    app.get('/specificReviews/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { scholarshipid: id }
+      const result = await userReviewCollection.find(query).toArray();
       res.send(result);
     })
 
