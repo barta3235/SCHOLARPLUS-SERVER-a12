@@ -498,7 +498,14 @@ async function run() {
 
     // admin || get all users of all role
     app.get('/allUsersByAdmin', verifyToken, verifyAdmin, async (req, res) => {
-      const result = await userCollection.find().toArray()
+      const role= req.query.role;
+      console.log(role);
+      let query={};
+      if(role && role!=='all'){
+        query.role=role;
+      }
+      console.log(query)
+      const result = await userCollection.find(query).toArray()
       res.send(result)
     })
 
