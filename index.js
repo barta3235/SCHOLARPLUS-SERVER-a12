@@ -498,11 +498,11 @@ async function run() {
 
     // admin || get all users of all role
     app.get('/allUsersByAdmin', verifyToken, verifyAdmin, async (req, res) => {
-      const role= req.query.role;
+      const role = req.query.role;
       console.log(role);
-      let query={};
-      if(role && role!=='all'){
-        query.role=role;
+      let query = {};
+      if (role && role !== 'all') {
+        query.role = role;
       }
       console.log(query)
       const result = await userCollection.find(query).toArray()
@@ -532,6 +532,43 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.deleteOne(query);
       res.send(result);
+    })
+
+
+
+    //analytics by admin 
+    app.get('/analytics1ByAdmin', verifyToken, verifyAdmin, async (req, res) => {
+      const allScholarshipCount = await allScholarshipCollection.estimatedDocumentCount();
+      const userCount = await userCollection.estimatedDocumentCount();
+      const appliedCount = await appliedScholarshipCollection.estimatedDocumentCount();
+
+      const totalFees = await appliedScholarshipCollection.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalFeesGenerated: { $sum: '$payment' }
+          }
+        }
+      ]).toArray();
+      const totalApplicationFee = totalFees.length > 0 ? totalFees[0].totalFeesGenerated : 0;
+
+      const universityApplication = await appliedScholarshipCollection.aggregate([
+        {
+          $group: {
+            _id: '$universityname',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { count: -1 } 
+        },
+        {
+          $limit: 4 
+        }
+      ]).toArray();
+
+
+      res.send({ allScholarshipCount, userCount, appliedCount, totalApplicationFee,universityApplication });
     })
 
 
